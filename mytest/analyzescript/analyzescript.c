@@ -32,6 +32,8 @@
 static int constCount = 0;
 
 static FILE *infoResult;
+gsp_sqlparser *parser = NULL;
+gsp_sql_statement *gstmt = NULL;
 
 static void _printErrorInfo(FILE *file, const char * format, ...){
 	va_list argp;
@@ -175,8 +177,11 @@ static void parse_function (gsp_functionCall* function)
     printf("\t");
     
 	CString* info2 = CStringNew();
-    CStringNAppend(info2, function->Args->head->node->fragment.startToken->pStr, function->Args->head->node->fragment.startToken->nStrLen);
-    printf ("arg:%s\n", info2->buffer);
+    if (NULL != function->Args)
+    {
+        CStringNAppend(info2, function->Args->head->node->fragment.startToken->pStr, function->Args->head->node->fragment.startToken->nStrLen);
+        printf ("arg:%s\n", info2->buffer);
+    }
     
     CStringDelete(info);
     CStringDelete(info2);
@@ -1292,8 +1297,17 @@ static char* updateStmtInfo( gsp_updateStatement * pSqlstmt )
                     } 
                 }
 				printf(gsp_node_text((gsp_node*)field->expr->rightOperand));
-                printf("\033[0m");
                 
+                gsp_setNodeText(parser, (gsp_node*)field->expr->rightOperand, "hello,dafei", FALSE);       
+
+                printf ("  modify: ");
+                printf(gsp_node_text((gsp_node*)field->expr->rightOperand));
+
+                printf("\033[0m");
+                #if 0
+                char * nodeText = gsp_getNodeText((gsp_node*)gstmt->stmt);
+                printf ("\n****%s****\n", nodeText);
+                #endif
                 printf("\ttype: ");
                 if (eet_simple_constant == field->expr->rightOperand->expressionType)
                 {
@@ -1680,7 +1694,6 @@ static void analyzestmt( gsp_sql_statement * stmt )
 int main(int argc,char *argv[])
 {
 	int rc, argIndex, index;
-	gsp_sqlparser *parser = NULL;
 	List *argList = NULL;
 	FILE *sqlFile = NULL;
 	FILE *infoResult = NULL;
@@ -1771,8 +1784,8 @@ int main(int argc,char *argv[])
 	}
 
 	for(i=0;i<parser->nStatement;i++){
-		gsp_sql_statement *stmt = &parser->pStatement[i];
-		analyzestmt(stmt);
+		gstmt = &parser->pStatement[i];
+		analyzestmt(gstmt);
 		if(i<parser->nStatement-1){
 			_printInfo(infoResult, "\n\n");
 		}
