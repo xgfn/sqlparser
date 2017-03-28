@@ -1,0 +1,4 @@
+DELETE FROM Person WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max'
+DELETE FROM Person WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max' or grade > 5.0 and age <= 10
+delete * from tableName		/* mysql is not supported */
+delete  from tableName 

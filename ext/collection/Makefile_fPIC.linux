@@ -1,0 +1,192 @@
+LIB_DIR = ../../lib
+COLLECTION_DIR = .
+
+CC = gcc
+AR = ar 
+CFLAGS = -c -fPIC -I $(COLLECTION_DIR)/includes
+LDFLAGS = -shared -o
+ARFLAGS = rcs 
+LIB_NAME = libgspcollection.a
+LIB_NAME_SO = libgspcollection.so
+LIB_NAME32 = libgspcollection32.a
+LIB_NAME64 = libgspcollection64.a
+LIB_NAME64_SHARED = libgspcollection64.so
+
+COLLECTION_SOURCE = $(COLLECTION_DIR)/src/c_algo.c \
+	$(COLLECTION_DIR)/src/c_function.c \
+	$(COLLECTION_DIR)/src/c_iterator.c \
+	$(COLLECTION_DIR)/src/c_list.c \
+	$(COLLECTION_DIR)/src/c_map.c \
+	$(COLLECTION_DIR)/src/c_memory.c \
+	$(COLLECTION_DIR)/src/c_pair.c \
+	$(COLLECTION_DIR)/src/c_queue.c \
+	$(COLLECTION_DIR)/src/c_set.c \
+	$(COLLECTION_DIR)/src/c_stack.c \
+	$(COLLECTION_DIR)/src/c_tree.c \
+	$(COLLECTION_DIR)/src/c_vector.c \
+	$(COLLECTION_DIR)/src/comparer.c \
+	$(COLLECTION_DIR)/src/lifo_stack.c \
+	$(COLLECTION_DIR)/src/linked_list.c \
+	$(COLLECTION_DIR)/src/memento.c \
+	$(COLLECTION_DIR)/src/tree_map.c \
+	$(COLLECTION_DIR)/src/cstring.c
+	
+COLLECTION_HEADERS = $(COLLECTION_DIR)/includes/c_algo.h \
+	$(COLLECTION_DIR)/includes/c_algorithm.h \
+	$(COLLECTION_DIR)/includes/c_def.h \
+	$(COLLECTION_DIR)/includes/c_function.h \
+	$(COLLECTION_DIR)/includes/c_functional.h \
+	$(COLLECTION_DIR)/includes/c_iterator.h \
+	$(COLLECTION_DIR)/includes/c_list.h \
+	$(COLLECTION_DIR)/includes/c_map.h \
+	$(COLLECTION_DIR)/includes/c_memory.h \
+	$(COLLECTION_DIR)/includes/c_pair.h \
+	$(COLLECTION_DIR)/includes/c_queue.h \
+	$(COLLECTION_DIR)/includes/c_set.h \
+	$(COLLECTION_DIR)/includes/c_stack.h \
+	$(COLLECTION_DIR)/includes/c_tree.h \
+	$(COLLECTION_DIR)/includes/c_utility.h \
+	$(COLLECTION_DIR)/includes/c_vector.h \
+	$(COLLECTION_DIR)/includes/comparer.h \
+	$(COLLECTION_DIR)/includes/collection.h \
+	$(COLLECTION_DIR)/includes/lifo_stack.h \
+	$(COLLECTION_DIR)/includes/linked_list.h \
+	$(COLLECTION_DIR)/includes/memento.h \
+	$(COLLECTION_DIR)/includes/tree_map.h \
+	$(COLLECTION_DIR)/includes/cstring.h
+ 
+COLLECTION_OBJECTS = $(LIB_DIR)/c_algo.o \
+	$(LIB_DIR)/c_function.o \
+	$(LIB_DIR)/c_iterator.o \
+	$(LIB_DIR)/c_list.o \
+	$(LIB_DIR)/c_map.o \
+	$(LIB_DIR)/c_memory.o \
+	$(LIB_DIR)/c_pair.o \
+	$(LIB_DIR)/c_queue.o \
+	$(LIB_DIR)/c_set.o \
+	$(LIB_DIR)/c_stack.o \
+	$(LIB_DIR)/c_tree.o \
+	$(LIB_DIR)/c_vector.o \
+	$(LIB_DIR)/comparer.o \
+	$(LIB_DIR)/lifo_stack.o \
+	$(LIB_DIR)/linked_list.o \
+	$(LIB_DIR)/memento.o \
+	$(LIB_DIR)/tree_map.o \
+	$(LIB_DIR)/cstring.o
+
+
+	
+gspcollection: 	create_lib_dir \
+	$(COLLECTION_OBJECTS) \
+	create_gspcollection \
+	clean_obj
+
+
+gspcollection_so: 	create_lib_dir \
+	$(COLLECTION_OBJECTS) \
+	create_gspcollection_so \
+	clean_obj
+		
+
+create_gspcollection:
+	$(AR) $(ARFLAGS) $(LIB_DIR)/$(LIB_NAME) $(COLLECTION_OBJECTS)
+
+create_gspcollection_so:
+	$(CC) $(LDFLAGS) $(LIB_DIR)/$(LIB_NAME_SO) $(COLLECTION_OBJECTS)
+
+
+gspcollection64: 	create_lib_dir \
+	$(COLLECTION_OBJECTS) \
+	create_gspcollection64_shared \
+	clean_obj
+	
+create_gspcollection64:
+	$(AR) $(ARFLAGS) $(LIB_DIR)/$(LIB_NAME64) $(COLLECTION_OBJECTS)
+	
+create_gspcollection64_shared:
+	$(CC) -shared -o $(LIB_DIR)/$(LIB_NAME64_SHARED) $(COLLECTION_OBJECTS)
+	
+gspcollection32: 	create_lib_dir \
+	$(COLLECTION_OBJECTS) \
+	create_gspcollection32 \
+	clean_obj
+	
+create_gspcollection32:
+	$(AR) $(ARFLAGS) $(LIB_DIR)/$(LIB_NAME32) $(COLLECTION_OBJECTS)
+	
+create_lib_dir:
+	@if [ ! -d "$(LIB_DIR)" ]; \
+	then \
+	    mkdir $(LIB_DIR); \
+	fi \
+
+remove_lib_dir:
+	@if [ -d "$(LIB_DIR)" ]; \
+	then \
+	    rm -rf $(LIB_DIR); \
+	fi \
+
+
+ 
+$(LIB_DIR)/c_algo.o:	$(COLLECTION_DIR)/src/c_algo.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_function.o:	$(COLLECTION_DIR)/src/c_function.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_iterator.o:	$(COLLECTION_DIR)/src/c_iterator.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_list.o:	$(COLLECTION_DIR)/src/c_list.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_map.o:	$(COLLECTION_DIR)/src/c_map.c
+	$(CC) $(CFLAGS) $< -o $@
+ 
+$(LIB_DIR)/c_memory.o:	$(COLLECTION_DIR)/src/c_memory.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_pair.o:	$(COLLECTION_DIR)/src/c_pair.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_queue.o:	$(COLLECTION_DIR)/src/c_queue.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_set.o:	$(COLLECTION_DIR)/src/c_set.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_stack.o:	$(COLLECTION_DIR)/src/c_stack.c
+	$(CC) $(CFLAGS) $< -o $@
+	
+$(LIB_DIR)/c_tree.o:	$(COLLECTION_DIR)/src/c_tree.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/c_vector.o:	$(COLLECTION_DIR)/src/c_vector.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/comparer.o:	$(COLLECTION_DIR)/src/comparer.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/lifo_stack.o:	$(COLLECTION_DIR)/src/lifo_stack.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/linked_list.o:	$(COLLECTION_DIR)/src/linked_list.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/memento.o:	$(COLLECTION_DIR)/src/memento.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/tree_map.o:	$(COLLECTION_DIR)/src/tree_map.c
+	$(CC) $(CFLAGS) $< -o $@
+
+$(LIB_DIR)/cstring.o:	$(COLLECTION_DIR)/src/cstring.c
+	$(CC) $(CFLAGS) $< -o $@
+
+ 
+	
+clean_obj:
+	rm -f $(LIB_DIR)/*.o 
+
+clean: 
+	rm -rf $(LIB_DIR)
+	

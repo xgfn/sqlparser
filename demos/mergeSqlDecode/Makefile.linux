@@ -1,0 +1,44 @@
+LIB_DIR =  ../../lib
+BUILD_DIR = ../build
+DEMO_SRC_DIR = .
+CORE_DIR = ../../core
+GSP_CORE_LIB = gspcore
+
+
+CC = gcc
+
+CFLAGS = -c -I $(CORE_DIR)
+
+DEMO_EXE = $(BUILD_DIR)/mergeSqlDecode
+
+SOURCE = $(DEMO_SRC_DIR)/mergeSqlDecode.c
+	
+
+OBJECTS = $(BUILD_DIR)/mergeSqlDecode.o
+
+
+all: $(DEMO_EXE)
+
+$(DEMO_EXE): create_build_dir \
+	$(OBJECTS) \
+	create_demo_exe \
+	clean_demo_obj
+	
+create_demo_exe:
+	$(CC)  $(OBJECTS)  -L$(LIB_DIR) -l$(GSP_CORE_LIB)  -o $(DEMO_EXE)
+	
+create_build_dir:
+	@if [ ! -d "$(BUILD_DIR)" ]; \
+	then \
+	    mkdir $(BUILD_DIR); \
+	fi \
+	 	
+$(BUILD_DIR)/mergeSqlDecode.o: $(DEMO_SRC_DIR)/mergeSqlDecode.c
+	$(CC) $(CFLAGS) $< -o $@
+	
+
+clean_demo_obj:
+	rm -f $(BUILD_DIR)/*.o 
+	
+clean:
+	rm -rf $(BUILD_DIR)

@@ -1,0 +1,55 @@
+# build execute file for all demos under build directory
+
+
+BUILD_DIR = ./build
+DEMO_DIR = .
+COLLECTIONCONST_DIR = $(DEMO_DIR)/collectConst
+COLLECT_SQLINFO_DIR = $(DEMO_DIR)/collectSqlInfo
+EXPRTRAVERSE_DIR = $(DEMO_DIR)/expressionTraverser
+NODEVISITOR_DIR = $(DEMO_DIR)/simpleNodeVisitor
+ITERATE_STMT_DIR = $(DEMO_DIR)/iterateStatement
+MODIFYSQL_DIR = $(DEMO_DIR)/modifySqlDemo
+GETTABLECOLUMNS_DIR = $(DEMO_DIR)/gettablecolumns
+JOINCONVERTER_DIR = $(DEMO_DIR)/joinConverter
+ANTISQLINJECTION_DIR = $(DEMO_DIR)/antiSQLInjection
+
+
+all: create_collectConst \
+	create_collect_sqlinfo \
+	create_testExprTraverse \
+	create_testNodeVisitor	\
+	create_iterate_stmt		\
+	create_modifysql		\
+	create_gettablecolumns	\
+	create_JoinConverter	\
+	create_antiSQLInjection
+	
+create_collectConst:
+	cd $(COLLECTIONCONST_DIR) && $(MAKE) -f Makefile.linux
+
+create_collect_sqlinfo:
+	cd $(COLLECT_SQLINFO_DIR) && $(MAKE) -f Makefile.linux
+
+create_testExprTraverse:
+	cd $(EXPRTRAVERSE_DIR) && $(MAKE) -f Makefile.linux
+
+create_testNodeVisitor:
+	cd $(NODEVISITOR_DIR) && $(MAKE) -f Makefile.linux
+
+create_iterate_stmt:
+	cd $(ITERATE_STMT_DIR) && $(MAKE) -f Makefile.linux
+	
+create_modifysql:
+	cd $(MODIFYSQL_DIR) && $(MAKE) -f Makefile.linux
+
+create_gettablecolumns:	
+	cd $(GETTABLECOLUMNS_DIR) && $(MAKE) -f Makefile.linux
+
+create_JoinConverter:	
+	cd $(JOINCONVERTER_DIR) && $(MAKE) -f Makefile.linux
+
+create_antiSQLInjection:	
+	cd $(ANTISQLINJECTION_DIR) && $(MAKE) -f Makefile.linux
+	
+clean:
+	rm -rf $(BUILD_DIR)

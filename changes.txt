@@ -1,0 +1,120 @@
+version C 1.1.0 (2016-08-30)
+ - [SQL Server] support insert bulk statement.
+ - [SQL Server] support not for replication property of constraint
+ - [SQL Server] fix a bug can't parse consective exec statement.
+ - [SQL Server] support where clause in create index statement
+
+version C 1.1.0 (2016-08-29)
+ - [SQL Server] support throw statement.
+ - [SQL Server] fix a bug can't parse comment with empty content inside.  
+ - [SQL Server] support rebuild clause in alter table.
+ - [SQL Server] support reconfigure statement.
+
+version C 1.0.3 (2016-04-08)
+ - [PostgreSQL] fix an access violation bug when process for update clause in gettablecolumn demo
+
+
+version C 1.0.2 (2015-12-18)
+ - [MySQL] able to detect syntax error while * is not the first column in select list.
+ - [MySQL] support join table reference in delete statement(multi-table syntax)
+ 
+version C 1.0.1 (2015-11-11)
+* [MySQL] able to detect syntax error in group by clause when desc/asc is mistyped.
+* [MySQL] fix a bug can't parse join without on clause.
+* [MySQL] support create schema statement.
+* [MySQL] fix a bug can't recoginze show session variables.
+
+version C 0.4.1 (2015-10-16)
+* [PostgreSQL] support set schema statement.
+
+version C 0.4.0 (2015-08-17)
+* [MySQL] Add support for use database statement: gsp_useDatabaseStmt
+* [PostgreSQL] fix a AV bug when parsing name list in table alias.
+
+
+version C 0.3.8 (2015-03-28)
+* [MySQL] fix a bug can't parse column start with number in a qualified name:
+* [sql injection demo] improvement to handle always_false_condition
+
+version C 0.3.7 (2015-03-19)
+* [sql server] fix a bug can't parse operator <> if there is no space before @ like  f<>@currentval
+* [sql server] fix a bug can't parse set clause if a variable is left operarand.
+* [general] fix a bug can't parse script if it includes more than 50 queries	
+* [PostgreSQL] fix a bug when parse query including limit clause.
+* [demos] improvement of sqlinjection
+
+version C 0.3.7 (2015-02-21)
+* [SQL Server] fix a bug can't parse update statement inside if
+
+version C 0.3.6 (2014-12-18)
+* [General] out of memory in release version after processing more than 4 millions sql queries.
+
+version C 0.3.6 (2014-12-17)
+* [General] Improve lexer to handle illegal string correctly.
+
+version C 0.3.5 (2014-11-27)
+* [SQL Server] Fix a bug when parse SELECT ' causes an infinite loop
+* [Oracle] support xml attribute clause in xmlelement function
+
+
+version C 0.3.4 (2014-11-16)
+* [Oracle] segfault error while tokenize sql only including */ character
+
+version C 0.3.3 (2014-08-01)
+* [general] fix a bug can't read sql file(no content read) under 64 bit windows, 
+
+
+version C 0.3.3 (2014-06-12)
+* [SQL Server] support sp_executesql statement
+* [SQL Server] support alter index statement
+* [SQL Server] support create database statement
+
+version C 0.3.3 (2014-06-11)
+* [SQL Server] support alter database statement
+* [SQL Server] fully support drop database statement
+
+version C 0.3.3 (2014-05-30)
+* [SQL Server] fix a bug can't parse "bad" query when start part of comment was included in literal.
+
+
+version C 0.3.2 (2014-03-24)
+* [MySQL] replace into statement share the same structure with Insert statement
+* [MySQL] fix a bug can't parse > operator if followd by ? without a space
+* [MySQL] support full outer join
+
+
+version C 0.3.2 (2014-03-20)
+* [general] fix a bug can't calculate token position correctly when ( at the end of line in Oracle database.
+* [PostgreSQL] fully support drop table statement
+
+version C 0.3.1 (2014-02-19)
+* [General] shared library for Linux 64 bit
+* [SQL Server] fix a big can't get detailed table information from drop table statment
+* [PostgreSQL] fully support drop table statement
+
+version C 0.3.0 (2014-01-03)
+* [MySQL] fix a bug can't parse binary operator b¡¯<binary number>¡¯
+
+version C 0.3.0 (2013-12-27)
+* [MySQL] add support for into outfile clause in select statement
+* [MySQL] fix a bug can't parse ON DUPLICATE KEY of insert statement
+
+version C 0.2.6 (2013-10-31)
+* [DB2] support SYS naming option where tables is identified as library/file (library=schema and file=table)
+
+version C 0.2.4 (2013-07-13)
+* add an extension module to support modify sql feature.
+* add new demo: antiSQLInjection, illustrates how to detect sql injection 
+	by using general sql parser library.
+* add new demo: oracleJoinConverter, illustrate how to Rewrite Oracle 
+	proprietary joins to ANSI SQL compliant joins.
+* add new demo: gettablecolumns, this demo illustrates how to get all table 
+	and column in a sql query.
+
+version C 0.2.4 (2013-06-26)
+* add new expression type eet_outer_join for Oracle proprietary join syntax (+)
+
+General SQL Parser C version 0.1.2 (2013-03-14)
+* syntax check support: Oracle, DB2, MySQL, SQL Server, PostgreSQL, Teradata, Informix, Sybase, Netezza and MDX.
+* [DB2] full parse tree nodes available.
+* 32 and 64 bit library available under windows and linux
