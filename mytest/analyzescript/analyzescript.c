@@ -64,6 +64,10 @@ static void _printInfo(FILE *file, const char * format, ...){
 }
 
 /****************************************************************/
+static void analyzeselect( gsp_selectStatement * psql );
+static void analyzeupdate( gsp_updateStatement * psql );
+static void analyzedelete( gsp_deleteStatement * psql );
+
 static char* getConstTypeName(EConstantType constType)
 {
     char *constTypeName = NULL;
@@ -100,10 +104,16 @@ static void parse_objectOperand (gsp_objectname* objName)
    
 	CString* info = CStringNew();
     
-    CStringAppend(info, "\n field:");
+    printf(" field: ");
     CStringNAppend(info, objName->partToken->pStr, objName->partToken->nStrLen);
-    _printInfo(infoResult, info->buffer);
-
+    if (objName->objectToken != NULL)
+    {
+        CStringAppend(info, "\tprefix: ");
+        CStringNAppend(info, objName->objectToken->pStr, objName->objectToken->nStrLen); 
+        CStringAppend(info, "\t");
+    }
+    printf (info->buffer);
+    printf("    \n");
 
     CStringDelete(info);
 
@@ -124,19 +134,80 @@ static void parse_constant (gsp_constant* constant)
         
    
 	CString* info = CStringNew();
-    CStringAppend(info, "\n const:");
+    printf(" field: ");
     CStringNAppend(info, constant->fragment.startToken->pStr, constant->fragment.startToken->nStrLen);
-    CStringAppend(info, "    ");
+    printf (info->buffer);
+    printf("    ");
 
-    CStringAppend(info, "type:");
-    CStringAppend(info, getConstTypeName(constant->constantType));
-    CStringAppend(info, "    ");
-
-    _printInfo(infoResult, info->buffer);
+    printf("type: ");
+    printf(getConstTypeName(constant->constantType));
+    printf("    \n");
 
     CStringDelete(info);
 
     return;
+}
+
+static void parse_function (gsp_functionCall* function)
+{
+    if (NULL == function)
+    {
+        return;
+    }
+
+    if (NULL == function->fragment.startToken)
+    {
+        return;
+    }
+   
+	CString* info = CStringNew();
+    printf(" field: ");
+    CStringNAppend(info, function->fragment.startToken->pStr, function->fragment.startToken->nStrLen);
+    printf (info->buffer);
+    printf("\t");
+    
+	CString* info2 = CStringNew();
+    CStringNAppend(info2, function->Args->head->node->fragment.startToken->pStr, function->Args->head->node->fragment.startToken->nStrLen);
+    printf ("arg:%s\t", info2->buffer);
+    
+    printf("type: function");
+    printf("    \n");
+
+    CStringDelete(info);
+    CStringDelete(info2);
+
+    return;
+}
+
+static void parse_subQuery (gsp_selectSqlNode *subQuery)
+{
+    if (NULL == subQuery)
+    {
+        return;
+    }
+
+    printf (" field: Subquery ");
+    if (t_gsp_selectStatement == subQuery->nodeType)
+    {
+        analyzeselect(subQuery);
+    }
+    #if 0
+    else if (t_gsp_updateStatement == subQuery->nodeType)
+    {
+        analyzeupdate(subQuery);
+    }
+    else if (t_gsp_deleteStatement == subQuery->nodeType)
+    {
+        analyzedelete(subQuery);
+    }
+    else if (t_gsp_insertStatement == subQuery->nodeType)
+    {
+        analyzeinsert(subQuery);
+    }
+    #endif
+
+    return;
+ 
 }
 
 static void parse_expr (gsp_expr* expr)
@@ -182,31 +253,93 @@ static void parse_expr (gsp_expr* expr)
         gsp_selectSqlNode *subQuery = expr->subQueryNode;
         if (NULL != subQuery)
         {
-           // parse_subQuery ();
+            parse_subQuery (subQuery);
         }
     }
 
     return;
 }
 
-static void parse_whereCondition (gsp_whereClause *pWhereClause)
+static void parse_condition (gsp_expr *condition)
 {
-    if (NULL == pWhereClause)
-    {
-        return;
-    }
-    
-    if (NULL == pWhereClause->condition)
+    if (NULL == condition)
     {
         return;
     }
 
-    gsp_expr* leftOperand = pWhereClause->condition->leftOperand;
-    gsp_expr* rightOperand = pWhereClause->condition->rightOperand;
+    gsp_expr* leftOperand = condition->leftOperand;
+    gsp_expr* rightOperand = condition->rightOperand;
+
+    if ((NULL == leftOperand) && (NULL == rightOperand))
+    {
+        return;
+    }
     
+    printf ("\n<<<<<<<=======================================\n");
+    printf ("parse condition:\n\n");
+    
+    printf ("[left-expr]:\n");
     parse_expr (leftOperand);
+    printf ("[right-expr]:\n");
     parse_expr (rightOperand);
+    printf ("\n=======================================>>>>>>>\n");
+    return;
+}
+
+static void parse_expr_format (gsp_expr *expr)
+{
+    if (NULL == expr)
+    {
+        return;
+    }
     
+    printf ("\n<<<<<<<=======================================\n");
+    // if (eet_simple_object_name == expr->expressionType)
+    if (NULL != expr->objectOperand)
+    {
+     parse_objectOperand(expr->objectOperand);        
+    }
+    //else if (eet_simple_constant == expr->expressionType)
+    if (NULL != expr->constantOperand)
+    {
+     parse_constant (expr->constantOperand);
+    }
+
+    if (NULL != expr->functionCall)
+    {
+        parse_function(expr->functionCall);
+    }
+    //else if (eet_simple_source_token == expr->expressionType)
+    {
+     //printf ("********notice:this is eet_simple_source_token\n");
+    }
+    //else if (eet_simple_comparison == expr->expressionType)
+
+    {
+     gsp_expr* leftOperand = expr->leftOperand;
+     gsp_expr* rightOperand = expr->rightOperand;
+
+     if (NULL != leftOperand)
+     {
+         parse_expr (leftOperand);
+     }
+     
+     if (NULL != leftOperand)
+     {
+         parse_expr (rightOperand);
+     }
+     
+    }
+
+    {
+        gsp_selectSqlNode *subQuery = expr->subQueryNode;
+        if (NULL != subQuery)
+        {
+            parse_subQuery (subQuery);
+        }
+    }
+
+    printf ("\n=======================================>>>>>>>\n");
     return;
 }
 
@@ -217,6 +350,7 @@ static void analyzestmt( gsp_sql_statement * stmt );
 
 static char* selectStmtInfo( gsp_selectStatement * pSqlstmt ) 
 {
+    #if 0
 	char* result;
 	CString* info = CStringNew();
 	gsp_listcell *cell;
@@ -336,7 +470,7 @@ static char* selectStmtInfo( gsp_selectStatement * pSqlstmt )
 		if(pSqlstmt->whereCondition!=NULL){
 			CStringAppend(info, "\n where clause: ");
 			CStringAppend(info, gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
-            parse_whereCondition (pSqlstmt->whereCondition);
+            //parse_condition (pSqlstmt->whereCondition->condition);
 		}
 
 		if(pSqlstmt->groupByClause!=NULL){
@@ -372,18 +506,246 @@ static char* selectStmtInfo( gsp_selectStatement * pSqlstmt )
 	result = info->buffer;
 	CStringDeleteWithoutBuffer(info);
 	return result;
+    #endif
+    
+#if 1
+	char* result;
+	gsp_listcell *cell;
+
+	switch (pSqlstmt->setOperator){
+	case eso_none:
+		printf("\n Select set type: none");
+		break;
+	case eso_union:
+		printf("\n Select set type: union");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	case eso_unionall:
+		printf("\n Select set type: union all");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	case eso_minus:
+		printf("\n Select set type: minus");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	case eso_minusall:
+		printf("\n Select set type: minus all");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	case eso_intersect:
+		printf("\n Select set type: intersect");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	case eso_intersectall:
+		printf("\n Select set type: intersect all");
+		printf("\n left statement: ");
+		selectStmtInfo(pSqlstmt->leftStmt);
+		printf("\n right statement: ");
+		selectStmtInfo(pSqlstmt->rightStmt);
+		break;
+	}
+
+	if (pSqlstmt->setOperator != eso_none)
+	{
+        #if 0
+        if (pSqlstmt->leftNode != NULL)
+        {
+            parse_subQuery(pSqlstmt->leftNode);
+        }
+        if (pSqlstmt->rightNode != NULL)
+        {
+            parse_subQuery(pSqlstmt->rightNode);
+        }
+        #endif
+
+		if(pSqlstmt->orderbyClause!=NULL){
+			printf("\n order by clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->orderbyClause));
+		}
+
+		if(pSqlstmt->forupdateClause!=NULL){
+			printf("\n for update clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->forupdateClause));
+		}
+	}
+	else{
+		if (pSqlstmt->selectDistinct!=NULL)
+		{
+			printf("\n select distinct: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->selectDistinct));
+		}
+
+		printf("\n select clause: ");
+		if(pSqlstmt->resultColumnList!=NULL){
+
+			printf("\n columns");
+
+			foreach(cell, pSqlstmt->resultColumnList){
+				gsp_resultColumn *field = (gsp_resultColumn *)gsp_list_celldata(cell);
+				printf("\n\tcolumn: ");
+				printf(gsp_node_text((gsp_node*)field->expr));
+				if(field->aliasClause!=NULL){
+					printf("\talias: ");
+					printf(gsp_node_text((gsp_node*)field->aliasClause));
+				}
+                if (field->expr != NULL)
+                {
+                    if (field->expr->subQueryNode != NULL)
+                    {
+                        parse_expr_format(field->expr);
+                    }
+                    if (field->expr->functionCall != NULL)
+                    {
+                        parse_expr_format(field->expr);
+                    }
+                }
+			}
+		}
+
+		if(pSqlstmt->fromTableList!=NULL){
+			printf("\n from clause: from ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->fromTableList));
+			foreach(cell, pSqlstmt->fromTableList){
+				gsp_fromTable *join = (gsp_fromTable *)gsp_list_celldata(cell);
+				if(join->tableName!=NULL){
+					printf("\n table: ");
+					printf(gsp_node_text((gsp_node*)join->tableName));
+				}
+				if(join->aliasClause!=NULL){
+					printf("\talias: ");
+					printf(gsp_node_text((gsp_node*)join->aliasClause));
+				}
+				if(join->joinExpr!=NULL){ //from employees alias4 left join boss on id = 3
+                    if(join->joinExpr->leftOperand!=NULL){
+						gsp_fromTable *joinTable = join->joinExpr->leftOperand;
+						if(joinTable->tableName!=NULL){
+							printf("\n table: ");
+							printf(gsp_node_text((gsp_node*)joinTable->tableName));
+						}
+						if(joinTable->aliasClause!=NULL){
+							printf("\talias: ");
+							printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+						}
+					}
+                    printf ("\t join type: %d ", join->joinExpr->jointype);
+                    if(join->joinExpr->rightOperand !=NULL){
+						gsp_fromTable *joinTable = join->joinExpr->rightOperand;
+                        if (joinTable->tableName != NULL)
+                        {
+                            printf ("\t join table: ");
+                            printf (gsp_node_text((gsp_node*) joinTable->tableName));
+                        }
+ 						if(joinTable->aliasClause!=NULL)
+                        {
+							printf("\talias: ");
+							printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+						}                       
+                    }
+				}
+                
+                if (join->joinExpr != NULL)
+                {
+                    parse_condition(join->joinExpr->onCondition);
+                    //TODO:
+                }
+			}
+		}
+
+		if(pSqlstmt->whereCondition!=NULL){
+			printf("\n where clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
+            parse_condition (pSqlstmt->whereCondition->condition);
+		}
+
+		if(pSqlstmt->groupByClause!=NULL){
+			printf("\n group by clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->groupByClause));
+            if (pSqlstmt->groupByClause->items != NULL)
+            {
+                foreach(cell, pSqlstmt->groupByClause->items)
+                {
+                    gsp_gruopByItem *groupBy = (gsp_gruopByItem *)gsp_list_celldata(cell);
+                    if ((NULL != groupBy) && (NULL != groupBy->expr))
+                    {
+                        printf ("\t group name: ");
+                        printf(gsp_node_text((gsp_node*)groupBy->expr));
+                    }
+                }
+            }
+			if(pSqlstmt->groupByClause->havingClause!=NULL){
+				printf("\n having clause: having ");
+				printf(gsp_node_text((gsp_node*)pSqlstmt->groupByClause->havingClause));
+            
+                printf ("\t having name: ");
+                printf(gsp_node_text((gsp_node*)pSqlstmt->groupByClause->havingClause->leftOperand));
+			}
+		}
+
+		if(pSqlstmt->orderbyClause!=NULL){
+			printf("\n order by clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->orderbyClause));
+        
+            printf ("\t order name: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->orderbyClause->items));
+		}
+
+		if(pSqlstmt->forupdateClause!=NULL){
+			printf("\n for update clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->forupdateClause));
+		}
+
+		if(pSqlstmt->topClause!=NULL){    //mysql not supported
+			printf("\n top clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->topClause));
+		}
+
+		if(pSqlstmt->limitClause!=NULL){
+			printf("\n limit clause: ");
+			printf(gsp_node_text((gsp_node*)pSqlstmt->limitClause));
+
+            printf ("\t offset: ");
+            if (NULL != pSqlstmt->limitClause->offset->constantOperand)
+            {
+                printf(gsp_node_text((gsp_node*)pSqlstmt->limitClause->offset->constantOperand));
+            }
+		}
+	}
+
+	return result;
+#endif
 }
 
 static void analyzeselect( gsp_selectStatement * psql ) 
 {
+    #if 0
 	_printInfo(infoResult, "Select statement:");
 	_printInfo(infoResult, selectStmtInfo(psql));
 	_printInfo(infoResult, "\n");
+    #endif
+    printf ("Select statement:\n");
+    selectStmtInfo(psql);
+    printf ("\n");
 }
 
 static char* deleteStmtInfo( gsp_deleteStatement * pSqlstmt ) 
 {
 	char* result;
+#if 0
 	CString* info = CStringNew();
 
 	if(pSqlstmt->targetTableNode!=NULL){
@@ -394,24 +756,143 @@ static char* deleteStmtInfo( gsp_deleteStatement * pSqlstmt )
 	if(pSqlstmt->whereCondition!=NULL){
 		CStringAppend(info, "\n where clause: ");
 		CStringAppend(info, gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
-        parse_whereCondition(pSqlstmt->whereCondition);
+        parse_condition(pSqlstmt->whereCondition->condition);
 	}
 
 	if(pSqlstmt->returningClause!=NULL){
 		CStringAppend(info, "\n returning clause: ");
 		CStringAppend(info, gsp_node_text((gsp_node*)pSqlstmt->returningClause));
 	}
-
 	result = info->buffer;
 	CStringDeleteWithoutBuffer(info);
+#endif
+
+    if (pSqlstmt->targetTableList != NULL)
+    {
+    	gsp_listcell *cell = NULL;
+        foreach(cell, pSqlstmt->targetTableList){
+            gsp_fromTable *join = (gsp_fromTable *)gsp_list_celldata(cell);
+            if(join->tableName!=NULL){
+                printf("\n table: ");
+                printf(gsp_node_text((gsp_node*)join->tableName));
+            }
+            if(join->aliasClause!=NULL){
+                printf("\talias: ");
+                printf(gsp_node_text((gsp_node*)join->aliasClause));
+            }
+            if(join->joinExpr!=NULL){ //from employees alias4 left join boss on id = 3
+                if(join->joinExpr->leftOperand!=NULL){
+                    gsp_fromTable *joinTable = join->joinExpr->leftOperand;
+                    if(joinTable->tableName!=NULL){
+                        printf("\n table: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->tableName));
+                    }
+                    if(joinTable->aliasClause!=NULL){
+                        printf("\talias: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+                    }
+                }
+                printf ("\t join type: %d ", join->joinExpr->jointype);
+                if(join->joinExpr->rightOperand !=NULL){
+                    gsp_fromTable *joinTable = join->joinExpr->rightOperand;
+                    if (joinTable->tableName != NULL)
+                    {
+                        printf ("\t join table: ");
+                        printf (gsp_node_text((gsp_node*) joinTable->tableName));
+                    }
+                    if(joinTable->aliasClause!=NULL)
+                    {
+                        printf("\talias: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+                    }                       
+                }
+            }
+            
+            if (join->joinExpr != NULL)
+            {
+                parse_condition(join->joinExpr->onCondition);
+                //TODO:
+            }
+        }
+    }
+    if (pSqlstmt->sourceTableList != NULL)
+    {
+    	gsp_listcell *cell = NULL;
+        foreach(cell, pSqlstmt->sourceTableList){
+            gsp_fromTable *join = (gsp_fromTable *)gsp_list_celldata(cell);
+            if(join->tableName!=NULL){
+                printf("\n table: ");
+                printf(gsp_node_text((gsp_node*)join->tableName));
+            }
+            if(join->aliasClause!=NULL){
+                printf("\talias: ");
+                printf(gsp_node_text((gsp_node*)join->aliasClause));
+            }
+            if(join->joinExpr!=NULL){ //from employees alias4 left join boss on id = 3
+                if(join->joinExpr->leftOperand!=NULL){
+                    gsp_fromTable *joinTable = join->joinExpr->leftOperand;
+                    if(joinTable->tableName!=NULL){
+                        printf("\n table: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->tableName));
+                    }
+                    if(joinTable->aliasClause!=NULL){
+                        printf("\talias: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+                    }
+                }
+                printf ("\t join type: %d ", join->joinExpr->jointype);
+                if(join->joinExpr->rightOperand !=NULL){
+                    gsp_fromTable *joinTable = join->joinExpr->rightOperand;
+                    if (joinTable->tableName != NULL)
+                    {
+                        printf ("\t join table: ");
+                        printf (gsp_node_text((gsp_node*) joinTable->tableName));
+                    }
+                    if(joinTable->aliasClause!=NULL)
+                    {
+                        printf("\talias: ");
+                        printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
+                    }                       
+                }
+            }
+            
+            if (join->joinExpr != NULL)
+            {
+                parse_condition(join->joinExpr->onCondition);
+                //TODO:
+            }
+        }
+    }
+
+	if(pSqlstmt->targetTableNode!=NULL){
+    	printf("\n table:");
+    	printf(gsp_node_text((gsp_node*)pSqlstmt->targetTableNode));
+	}
+
+	if(pSqlstmt->whereCondition!=NULL){
+		printf("\n where clause: ");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
+        parse_condition(pSqlstmt->whereCondition->condition);
+	}
+
+	if(pSqlstmt->returningClause!=NULL){
+		printf("\n returning clause: ");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->returningClause));
+	}
+    
 	return result;
 }
 
 static void analyzedelete( gsp_deleteStatement * psql ) 
 {
+    #if 0
 	_printInfo(infoResult, "Delete statement:");
 	_printInfo(infoResult, deleteStmtInfo(psql));
 	_printInfo(infoResult, "\n");
+    #endif
+	printf("Delete statement:");
+	deleteStmtInfo(psql);
+	printf("\n");
 }
 
 static char* insertAllStmtInfo( gsp_insertStatement * pSqlstmt ) 
@@ -500,6 +981,7 @@ static char* insertAllStmtInfo( gsp_insertStatement * pSqlstmt )
 static char* insertStmtInfo( gsp_insertStatement * pSqlstmt ) 
 {
 	char* result;
+    #if 0
 	CString* info = CStringNew();
 	gsp_listcell *cell, *element;
 
@@ -512,6 +994,7 @@ static char* insertStmtInfo( gsp_insertStatement * pSqlstmt )
 		CStringAppend(info, "\n columns: ");
 		foreach(cell, pSqlstmt->columnList){
 			gsp_objectname *column = (gsp_objectname *)gsp_list_celldata(cell);
+            CStringAppend(info, "\n\t");
 			CStringAppend(info, gsp_node_text((gsp_node*)column));
 		}
 	}
@@ -525,6 +1008,19 @@ static char* insertStmtInfo( gsp_insertStatement * pSqlstmt )
 					gsp_resultColumn *column = (gsp_resultColumn *)gsp_list_celldata(element);
 					CStringAppend(info, "\n\t");
 					CStringAppend(info, gsp_node_text((gsp_node*)column));
+                    
+                    CStringAppend(info, "\ttype: ");
+                    if (eet_simple_constant == column->expr->expressionType)
+                    {
+                        if (NULL != column->expr->constantOperand)
+                        {
+                            CStringAppend(info, getConstTypeName (column->expr->constantOperand->constantType));
+                        }
+                    }
+                    else
+                    {
+                        CStringAppend(info, "unkonw");
+                    }
 				}
 			}
 		}
@@ -537,11 +1033,67 @@ static char* insertStmtInfo( gsp_insertStatement * pSqlstmt )
 
 	result = info->buffer;
 	CStringDeleteWithoutBuffer(info);
+    #endif
+	gsp_listcell *cell, *element;
+
+	if(pSqlstmt->targetTableNode!=NULL){
+		printf("\n table:");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->targetTableNode));
+	}
+
+	if(pSqlstmt->columnList!=NULL && pSqlstmt->columnList->length>0){
+		printf("\n columns: ");
+		foreach(cell, pSqlstmt->columnList){
+			gsp_objectname *column = (gsp_objectname *)gsp_list_celldata(cell);
+            printf("\n\t");
+			printf(gsp_node_text((gsp_node*)column));
+		}
+	}
+
+	if(pSqlstmt->multiTargetList!=NULL && pSqlstmt->multiTargetList->length>0){
+		printf("\n values: ");
+		foreach(cell, pSqlstmt->multiTargetList){
+			gsp_multiTarget *targetValue = (gsp_multiTarget *)gsp_list_celldata(cell);
+			if(targetValue->resultColumnList!=NULL){
+				foreach(element, targetValue->resultColumnList){
+					gsp_resultColumn *column = (gsp_resultColumn *)gsp_list_celldata(element);
+					printf("\n\t");
+					printf(gsp_node_text((gsp_node*)column));
+                    
+                    printf("\ttype: ");
+                    if (eet_simple_constant == column->expr->expressionType)
+                    {
+                        if (NULL != column->expr->constantOperand)
+                        {
+                            printf(getConstTypeName (column->expr->constantOperand->constantType));
+                        }
+                    }
+                    else
+                    {
+                        printf("unkonw");
+                    }
+                    
+				}
+			}
+		}
+	}
+    
+	if(pSqlstmt->subQueryNode!=NULL){
+		printf("\n select query details: ");
+		selectStmtInfo((gsp_selectStatement*)pSqlstmt->subQueryNode);
+	}
+
+	if(pSqlstmt->returningClause!=NULL){
+		printf("\n returning clause: ");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->returningClause));
+	}
+
 	return result;
 }
 
 static void analyzeinsert( gsp_insertStatement * psql ) 
 {
+    #if 0
 	_printInfo(infoResult, "insert statement: ");
 	if (psql->insertIntoValues != NULL && psql->insertIntoValues->length > 0)
 	{
@@ -556,11 +1108,27 @@ static void analyzeinsert( gsp_insertStatement * psql )
 		_printInfo(infoResult, insertStmtInfo(psql));
 	}
 	_printInfo(infoResult, "\n");
+    #endif
+	printf("insert statement: ");
+	if (psql->insertIntoValues != NULL && psql->insertIntoValues->length > 0)
+	{
+		printf(insertAllStmtInfo(psql)); //不确定构造样式
+	}
+	else if (psql->insertConditions != NULL && psql->insertConditions->length > 0)
+	{
+		printf(insertAllStmtInfo(psql));//不确定构造样式
+	}
+	else
+	{
+		insertStmtInfo(psql);
+	}
+	printf("\n");
 }
 
 static char* updateStmtInfo( gsp_updateStatement * pSqlstmt ) 
 {
 	char* result;
+    #if 0
 	CString* info = CStringNew();
 	gsp_listcell *cell;
 
@@ -597,6 +1165,7 @@ static char* updateStmtInfo( gsp_updateStatement * pSqlstmt )
 	if(pSqlstmt->whereCondition!=NULL){
 		CStringAppend(info, "\n where clause: ");
 		CStringAppend(info, gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
+        parse_condition(pSqlstmt->whereCondition->condition);
 	}
 
 	if(pSqlstmt->returningClause!=NULL){
@@ -606,14 +1175,62 @@ static char* updateStmtInfo( gsp_updateStatement * pSqlstmt )
 
 	result = info->buffer;
 	CStringDeleteWithoutBuffer(info);
+    #endif
+	gsp_listcell *cell;
+
+	if(pSqlstmt->targetTableNode!=NULL){
+		printf("\n table:");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->targetTableNode));
+	}
+
+	if(pSqlstmt->resultColumnList!=NULL && pSqlstmt->resultColumnList->length>0){
+		printf("\n set clause:");
+		foreach(cell, pSqlstmt->resultColumnList){
+			gsp_resultColumn *field = (gsp_resultColumn *)gsp_list_celldata(cell);
+			if(field->expr!=NULL && field->expr->leftOperand!=NULL && field->expr->rightOperand!=NULL ){
+				printf("\n\tcolumn: ");
+				printf(gsp_node_text((gsp_node*)field->expr->leftOperand));
+				printf("\tvalue: ");
+				printf(gsp_node_text((gsp_node*)field->expr->rightOperand));
+                printf("\ttype: ");
+                if (eet_simple_constant == field->expr->rightOperand->expressionType)
+                {
+                    if (NULL != field->expr->rightOperand->constantOperand)
+                    {
+                        printf(getConstTypeName (field->expr->rightOperand->constantOperand->constantType));
+                    }
+                }
+                else
+                {
+                    printf("unkonw");
+                }
+			}
+		}
+	}
+
+	if(pSqlstmt->whereCondition!=NULL){
+		printf("\n where clause: ");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
+        parse_condition(pSqlstmt->whereCondition->condition);
+	}
+
+	if(pSqlstmt->returningClause!=NULL){
+		printf("\n returning clause: ");
+		printf(gsp_node_text((gsp_node*)pSqlstmt->returningClause));
+	}
 	return result;
 }
 
 static void analyzeupdate( gsp_updateStatement * psql ) 
 {
+    #if 0
 	_printInfo(infoResult, "Update statement:");
 	_printInfo(infoResult, updateStmtInfo(psql));
 	_printInfo(infoResult, "\n");
+    #endif
+	printf("Update statement:");
+	updateStmtInfo(psql);
+	printf("\n");
 }
 
 static void analyzeColumn( gsp_objectname * column ) 
@@ -976,7 +1593,7 @@ int main(int argc,char *argv[])
 	char *sqlText = argv[1];
 
 
-#if 0
+#if 1
 	argList = createStringList(FALSE);
 
 	for(index=0;index<argc;index++){
@@ -1041,7 +1658,7 @@ int main(int argc,char *argv[])
 	else{
 		_printInfo(infoResult, "Origin SQL:\n");
 		_printInfo(infoResult, sqlText);
-		_printInfo(infoResult, "\n\n");
+		_printInfo(infoResult, "\n");
 		rc= gsp_check_syntax(parser, sqlText);
 	}
 	if (rc != 0){

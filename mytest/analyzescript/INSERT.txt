@@ -1,7 +1,10 @@
-'INSERT INTO table_name VALUES (value1,value2,value3);'
-'insert into departments(id, name, id2, id3) values(70,''Public Relations'',100,1900);'
-'insert into departments(id, name, id2, id3) values (70,aa,100,1900),(70,bb,100,1900)'
-'INSERT INTO students(name, id) SELECT field1, field2 FROM table1 WHERE id = 1'
-'insert into table1(runoob_title, runoob_author) select runoob_title, runoob_author from table1 union select runoob_title, runoob_author from table1'
-'insert into table1(runoob_title, runoob_author) select runoob_title, runoob_author from table1 union all select runoob_title, runoob_author from table1'
-'insert into table1(runoob_title, runoob_author) SELECT Customer,SUM(OrderPrice) FROM Orders GROUP BY Customer'
+INSERT INTO table_name VALUES (value1,value2,value3);
+insert into departments(id, name, id2, id3) values(70,'Public Relations',100,1900);
+insert into departments(id, name, id2, id3) values (70,'aa',100,1900),(70,'bb',100.0,1900);
+INSERT INTO students(name, id) SELECT field1, field2 FROM table1 WHERE id = 1;
+insert into table(runoob_title, runoob_author) select runoob_title1, runoob_author1 from table1 union select runoob_title2, runoob_author2 from table2;
+insert into table1(runoob_title, runoob_author) select runoob_title, runoob_author from table1 union all select runoob_title, runoob_author from table1;
+insert into table1(runoob_title, runoob_author) SELECT Customer,SUM(OrderPrice) FROM Orders GROUP BY Customer;
+INSERT INTO t1 VALUES(100, 'abcde');
+INSERT INTO t1 VALUES((select id from t2), (select name from t3));
+/* 注意table.colum的场景也要测试 */

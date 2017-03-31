@@ -1,7 +1,5 @@
-DELETE FROM Person WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max'
-DELETE FROM Person WHERE gjc = LastName and 'guo' = FirstName and MyName = 'max'
-DELETE FROM Person WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max' or grade > 5.0 and age <= 10
-DELETE FROM Person where job_id0=(select job_id1 from employees1 where employee_id1=141) and salary1 > (select salary2 from employees2 where employee_id2='gjc')
-DELETE FROM Person where ((select job_id1 from employees1 where employee_id1=141)=job_id0)  and (salary1 > (select salary2 from employees2 where employee_id2='gjc'))
+DELETE FROM Person WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max' and 'max' = YourName or grade > 5.0 and age < 30;
+DELETE t1, t2 FROM Person left join BOSS on id = 5 WHERE LastName = gjc and FirstName = 'guo' and MyName = 'max' and 'max' = YourName or grade > 5.0 and age < 30;
+DELETE FROM Person where ((select job_id1 from employees1 where employee_id1=141) = job_id0) and salary1 > (select salary2 from employees2 where employee_id2='gjc')
 delete * from tableName		/* mysql is not supported */
-delete  from tableName 
+delete  from tableName; delete  from tableName ;

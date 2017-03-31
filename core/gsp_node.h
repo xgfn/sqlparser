@@ -748,7 +748,7 @@ typedef struct gsp_deleteSqlNode
 	struct gsp_topClause *topClause;
 	struct gsp_mssql_outputClause  *outputClause;
 	gsp_list *sourceTableList; /*<! list of gsp_fromTable in from clause */
-	gsp_list *targetTableList; /*<! MySQL, list of gsp_fromTable */
+	gsp_list *targetTableList; /*<! MySQL, list of gsp_fromTable (gjc:for union) */
 	struct gsp_limitClause *limitClause; /*!< MySQL limit clause */
 	gsp_orderBy *sortClause; /*!< MySQL order by clause */
 
