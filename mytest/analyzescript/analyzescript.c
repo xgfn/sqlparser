@@ -113,7 +113,8 @@ static void parse_objectOperand (gsp_objectname* objName)
         CStringAppend(info, "\t");
     }
     printf (info->buffer);
-    printf("    \n");
+    printf("\ttype: ");
+    printf("object\n");
 
     CStringDelete(info);
 
@@ -135,10 +136,17 @@ static void parse_constant (gsp_constant* constant)
    
 	CString* info = CStringNew();
     printf(" field: ");
+    if (constant->constantType == ect_string)
+    {
+        printf("\033[0;31m");
+    }
     CStringNAppend(info, constant->fragment.startToken->pStr, constant->fragment.startToken->nStrLen);
     printf (info->buffer);
     printf("    ");
-
+    if (constant->constantType == ect_string)
+    {
+        printf("\033[0m");
+    }
     printf("type: ");
     printf(getConstTypeName(constant->constantType));
     printf("    \n");
@@ -161,18 +169,15 @@ static void parse_function (gsp_functionCall* function)
     }
    
 	CString* info = CStringNew();
-    printf(" field: ");
+    printf("\t\tfunction: ");
     CStringNAppend(info, function->fragment.startToken->pStr, function->fragment.startToken->nStrLen);
     printf (info->buffer);
     printf("\t");
     
 	CString* info2 = CStringNew();
     CStringNAppend(info2, function->Args->head->node->fragment.startToken->pStr, function->Args->head->node->fragment.startToken->nStrLen);
-    printf ("arg:%s\t", info2->buffer);
+    printf ("arg:%s\n", info2->buffer);
     
-    printf("type: function");
-    printf("    \n");
-
     CStringDelete(info);
     CStringDelete(info2);
 
@@ -186,7 +191,7 @@ static void parse_subQuery (gsp_selectSqlNode *subQuery)
         return;
     }
 
-    printf (" field: Subquery ");
+    printf (" field: Subquery \n ");
     if (t_gsp_selectStatement == subQuery->nodeType)
     {
         analyzeselect(subQuery);
@@ -260,6 +265,7 @@ static void parse_expr (gsp_expr* expr)
     return;
 }
 
+#if 0
 static void parse_condition (gsp_expr *condition)
 {
     if (NULL == condition)
@@ -283,6 +289,90 @@ static void parse_condition (gsp_expr *condition)
     printf ("[right-expr]:\n");
     parse_expr (rightOperand);
     printf ("\n=======================================>>>>>>>\n");
+    return;
+}
+#endif
+static void parse_condition (gsp_expr* expr, char *clause)
+{
+    if (NULL == expr)
+    {
+        return;
+    }
+
+    if (NULL != expr->objectOperand)
+    {
+        parse_objectOperand(expr->objectOperand);        
+    }
+    if (NULL != expr->constantOperand)
+    {
+        parse_constant (expr->constantOperand);
+    }
+    if (NULL != expr->functionCall)
+    {
+        parse_function(expr->functionCall);
+    }
+    
+    gsp_expr* leftOperand = expr->leftOperand;
+    gsp_expr* rightOperand = expr->rightOperand;
+    if ((NULL != leftOperand) && (NULL != rightOperand))
+    {
+        printf ("\n<<<<<<<=======================================\n");
+        printf ("\033[7;36m parse %s condition:\n\033[0m", clause);
+        
+        printf (" \033[1m[left-expr]:\n\033[0m");
+        parse_expr (leftOperand);
+        printf (" \033[1m[right-expr]:\n\033[0m");
+        parse_expr (rightOperand);
+        printf ("=======================================>>>>>>>\n");
+        
+    }
+    
+    gsp_selectSqlNode *subQuery = expr->subQueryNode;
+    if (NULL != subQuery)
+    {
+        parse_subQuery (subQuery);
+    }
+
+    return;
+}
+
+static void parse_condition2 (gsp_expr* expr, char *clause)
+{
+    if (NULL == expr)
+    {
+        return;
+    }
+
+    if (NULL != expr->constantOperand)
+    {
+        parse_constant (expr->constantOperand);
+    }
+    if (NULL != expr->functionCall)
+    {
+        parse_function(expr->functionCall);
+    }
+    
+    gsp_expr* leftOperand = expr->leftOperand;
+    gsp_expr* rightOperand = expr->rightOperand;
+    if ((NULL != leftOperand) && (NULL != rightOperand))
+    {
+        printf ("\n<<<<<<<=======================================\n");
+        printf ("\033[7;36m parse %s condition:\n\033[0m", clause);
+        
+        printf (" \033[1m[left-expr]:\n\033[0m");
+        parse_expr (leftOperand);
+        printf (" \033[1m[right-expr]:\n\033[0m");
+        parse_expr (rightOperand);
+        printf ("=======================================>>>>>>>\n");
+        
+    }
+    
+    gsp_selectSqlNode *subQuery = expr->subQueryNode;
+    if (NULL != subQuery)
+    {
+        parse_subQuery (subQuery);
+    }
+
     return;
 }
 
@@ -605,14 +695,7 @@ static char* selectStmtInfo( gsp_selectStatement * pSqlstmt )
 				}
                 if (field->expr != NULL)
                 {
-                    if (field->expr->subQueryNode != NULL)
-                    {
-                        parse_expr_format(field->expr);
-                    }
-                    if (field->expr->functionCall != NULL)
-                    {
-                        parse_expr_format(field->expr);
-                    }
+                    parse_condition2(field->expr, "COLUMN");
                 }
 			}
 		}
@@ -656,20 +739,18 @@ static char* selectStmtInfo( gsp_selectStatement * pSqlstmt )
 							printf(gsp_node_text((gsp_node*)joinTable->aliasClause));
 						}                       
                     }
+
+                    {
+                        parse_condition(join->joinExpr->onCondition, "JOIN");
+                    }
 				}
-                
-                if (join->joinExpr != NULL)
-                {
-                    parse_condition(join->joinExpr->onCondition);
-                    //TODO:
-                }
 			}
 		}
 
 		if(pSqlstmt->whereCondition!=NULL){
 			printf("\n where clause: ");
 			printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
-            parse_condition (pSqlstmt->whereCondition->condition);
+            parse_condition (pSqlstmt->whereCondition->condition, "WHERE");
 		}
 
 		if(pSqlstmt->groupByClause!=NULL){
@@ -810,7 +891,7 @@ static char* deleteStmtInfo( gsp_deleteStatement * pSqlstmt )
             
             if (join->joinExpr != NULL)
             {
-                parse_condition(join->joinExpr->onCondition);
+                parse_condition(join->joinExpr->onCondition, "JOIN");
                 //TODO:
             }
         }
@@ -858,7 +939,7 @@ static char* deleteStmtInfo( gsp_deleteStatement * pSqlstmt )
             
             if (join->joinExpr != NULL)
             {
-                parse_condition(join->joinExpr->onCondition);
+                parse_condition(join->joinExpr->onCondition, "JOIN");
                 //TODO:
             }
         }
@@ -872,7 +953,7 @@ static char* deleteStmtInfo( gsp_deleteStatement * pSqlstmt )
 	if(pSqlstmt->whereCondition!=NULL){
 		printf("\n where clause: ");
 		printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
-        parse_condition(pSqlstmt->whereCondition->condition);
+        parse_condition(pSqlstmt->whereCondition->condition, "WHERE");
 	}
 
 	if(pSqlstmt->returningClause!=NULL){
@@ -1057,22 +1138,32 @@ static char* insertStmtInfo( gsp_insertStatement * pSqlstmt )
 			if(targetValue->resultColumnList!=NULL){
 				foreach(element, targetValue->resultColumnList){
 					gsp_resultColumn *column = (gsp_resultColumn *)gsp_list_celldata(element);
+                    if (eet_simple_constant == column->expr->expressionType)
+                    {
+                        if ((NULL != column->expr->constantOperand) &&
+                            (ect_string == column->expr->constantOperand->constantType))
+                        {
+                            printf("\033[0;31m");
+                        } 
+                    }
 					printf("\n\t");
 					printf(gsp_node_text((gsp_node*)column));
-                    
+                    printf("\033[0m");
                     printf("\ttype: ");
                     if (eet_simple_constant == column->expr->expressionType)
                     {
                         if (NULL != column->expr->constantOperand)
                         {
                             printf(getConstTypeName (column->expr->constantOperand->constantType));
-                        }
+                        } 
+
                     }
                     else
                     {
                         printf("unkonw");
                     }
-                    
+
+                    parse_condition(column->expr, "COLUMN");
 				}
 			}
 		}
@@ -1191,14 +1282,27 @@ static char* updateStmtInfo( gsp_updateStatement * pSqlstmt )
 				printf("\n\tcolumn: ");
 				printf(gsp_node_text((gsp_node*)field->expr->leftOperand));
 				printf("\tvalue: ");
+                
+                if (eet_simple_constant == field->expr->rightOperand->expressionType)
+                {
+                    if ((NULL != field->expr->rightOperand->constantOperand) &&
+                        (ect_string == field->expr->rightOperand->constantOperand->constantType))
+                    {
+                        printf("\033[0;31m");
+                    } 
+                }
 				printf(gsp_node_text((gsp_node*)field->expr->rightOperand));
+                printf("\033[0m");
+                
                 printf("\ttype: ");
                 if (eet_simple_constant == field->expr->rightOperand->expressionType)
                 {
+
                     if (NULL != field->expr->rightOperand->constantOperand)
                     {
                         printf(getConstTypeName (field->expr->rightOperand->constantOperand->constantType));
                     }
+
                 }
                 else
                 {
@@ -1211,7 +1315,7 @@ static char* updateStmtInfo( gsp_updateStatement * pSqlstmt )
 	if(pSqlstmt->whereCondition!=NULL){
 		printf("\n where clause: ");
 		printf(gsp_node_text((gsp_node*)pSqlstmt->whereCondition));
-        parse_condition(pSqlstmt->whereCondition->condition);
+        parse_condition(pSqlstmt->whereCondition->condition,  "WHERE");
 	}
 
 	if(pSqlstmt->returningClause!=NULL){
